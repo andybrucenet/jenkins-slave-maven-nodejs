@@ -11,8 +11,6 @@ ENV MAVEN_VERSION=3.3 \
     ENV=/usr/local/bin/scl_enable \
     PROMPT_COMMAND=". /usr/local/bin/scl_enable"
 
-COPY contrib/bin/scl_enable /usr/local/bin/scl_enable
-
 # Install NodeJS
 RUN yum install -y centos-release-scl-rh && \
     INSTALL_PKGS="rh-nodejs4 rh-nodejs4-npm rh-nodejs4-nodejs-nodemon" && \
@@ -36,6 +34,9 @@ RUN INSTALL_PKGS="java-1.8.0-openjdk-devel rh-maven33*" && \
     mkdir -p $HOME/.m2 && \
     mkdir -p $HOME/.gradle
 
+# install calibre
+RUN curl -q -k https://download.calibre-ebook.com/linux-installer.py | python -c "import sys; main=lambda:sys.stderr.write('Download failed\n'); exec(sys.stdin.read()); main()"
+
 # When bash is started non-interactively, to run a shell script, for example it
 # looks for this variable and source the content of this file. This will enable
 # the SCL for all scripts without need to do 'scl enable'.
@@ -44,6 +45,11 @@ ADD ./contrib/bin/configure-slave /usr/local/bin/configure-slave
 ADD ./contrib/settings.xml $HOME/.m2/
 ADD ./contrib/init.gradle $HOME/.gradle/
 
+# install gitbook after all else
+RUN source /usr/local/bin/scl_enable && \
+    npm install -g gitbook-cli
+
+# set perms
 RUN chown -R 1001:0 $HOME && \
     chmod -R g+rw $HOME
 
