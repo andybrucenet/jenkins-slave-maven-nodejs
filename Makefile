@@ -11,7 +11,6 @@ release: build
 	@docker build --tag=$(DOCKER_TAG):$(shell cat VERSION)  .
 
 push: release
-	@docker login --username andybrucenet
 	@docker push $(DOCKER_TAG):latest
 	@docker push $(DOCKER_TAG):$(shell cat ./VERSION)
 
