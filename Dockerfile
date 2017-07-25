@@ -1,35 +1,51 @@
-FROM sameersbn/gitlab:7.14.3
-MAINTAINER andrew.d.bruce@leidos.com
+FROM openshift/jenkins-slave-base-centos7
 
-# not specified in base image:
-#   GITLAB_ROOT_PASSWORD
-#   LDAP_PASS
-ENV \
-  GITLAB_HOST='lmgitlab.hlsdev.com' \
-  GITLAB_PORT='80' \
-  GITLAB_HTTPS='false' \
-  GITLAB_ROOT_EMAIL='admin@hlsdev.local' \
-  GITLAB_EMAIL='admin@hlsdev.local' \
-  GITLAB_EMAIL_DISPLAY_NAME='LM Gitlab' \
-  GITLAB_EMAIL_REPLY_TO='noreply@hlsdev.local' \
-  GITLAB_INCOMING_EMAIL_ENABLED='false' \
-  GITLAB_SIGNUP_ENABLED='false' \
-  GITLAB_USERNAME_CHANGE='false' \
-  SMTP_ENABLED='true' \
-  SMTP_DOMAIN='hlsdev.local' \
-  SMTP_HOST='smtp.hlsdev.local' \
-  SMTP_PORT='25' \
-  LDAP_ENABLED='true' \
-  LDAP_HOST='ldap.hlsdev.local' \
-  LDAP_PORT='636' \
-  LDAP_UID='uid' \
-  LDAP_METHOD='tls' \
-  LDAP_BIND_DN='uid=ldap_access,cn=users,cn=accounts,dc=hlsdev,dc=local' \
-  LDAP_ACTIVE_DIRECTORY='false' \
-  LDAP_ALLOW_USERNAME_OR_EMAIL_LOGIN='false' \
-  LDAP_BLOCK_AUTO_CREATED_USERS='true' \
-  LDAP_BASE='cn=users,cn=accounts,dc=hlsdev,dc=local' \
-  LDAP_USER_FILTER='(memberOf=cn=active_users,cn=groups,cn=accounts,dc=hlsdev,dc=local)' \
-  OAUTH_ENABLED='false' \
-  GITLAB_GRAVATAR_ENABLED='true'
+MAINTAINER Andrew Bruce <andy@softwareab.net>
+
+ENV MAVEN_VERSION=3.3 \
+    GRADLE_VERSION=3.5 \
+    NODEJS_VERSION=4.4 \
+    NPM_CONFIG_PREFIX=$HOME/.npm-global \
+    PATH=$HOME/node_modules/.bin:$HOME/.npm-global/bin:$PATH:/opt/gradle-3.5/bin \
+    BASH_ENV=/usr/local/bin/scl_enable \
+    ENV=/usr/local/bin/scl_enable \
+    PROMPT_COMMAND=". /usr/local/bin/scl_enable"
+
+COPY contrib/bin/scl_enable /usr/local/bin/scl_enable
+
+# Install NodeJS
+RUN yum install -y centos-release-scl-rh && \
+    INSTALL_PKGS="rh-nodejs4 rh-nodejs4-npm rh-nodejs4-nodejs-nodemon" && \
+    ln -s /usr/lib/node_modules/nodemon/bin/nodemon.js /usr/bin/nodemon && \
+    yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
+    rpm -V $INSTALL_PKGS && \
+    yum clean all -y
+
+# Install Maven
+RUN INSTALL_PKGS="java-1.8.0-openjdk-devel rh-maven33*" && \
+    yum install -y centos-release-scl-rh && \
+    yum install -y --enablerepo=centosplus $INSTALL_PKGS && \
+    curl -LOk https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip && \
+    unzip gradle-${GRADLE_VERSION}-bin.zip -d /opt && \
+    rm -f gradle-${GRADLE_VERSION}-bin.zip && \
+    rpm -V ${INSTALL_PKGS//\*/} && \
+    rpm -e java-1.7.0-openjdk --nodeps || true && \
+    rpm -e java-1.7.0-openjdk-devel --nodeps || true && \
+    rpm -e java-1.7.0-openjdk-headless --nodeps || true && \
+    yum clean all -y && \
+    mkdir -p $HOME/.m2 && \
+    mkdir -p $HOME/.gradle
+
+# When bash is started non-interactively, to run a shell script, for example it
+# looks for this variable and source the content of this file. This will enable
+# the SCL for all scripts without need to do 'scl enable'.
+ADD ./contrib/bin/scl_enable /usr/local/bin/scl_enable
+ADD ./contrib/bin/configure-slave /usr/local/bin/configure-slave
+ADD ./contrib/settings.xml $HOME/.m2/
+ADD ./contrib/init.gradle $HOME/.gradle/
+
+RUN chown -R 1001:0 $HOME && \
+    chmod -R g+rw $HOME
+
+USER 1001
 
