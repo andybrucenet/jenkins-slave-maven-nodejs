@@ -1,3 +1,6 @@
+########################################################################
+# Dockerfile, ABr
+# Custom image for Jenkins slave to support compliance-masonry
 FROM openshift/jenkins-slave-base-centos7
 
 MAINTAINER Andrew Bruce <andy@softwareab.net>
@@ -48,6 +51,12 @@ ADD ./contrib/init.gradle $HOME/.gradle/
 # install gitbook after all else
 RUN source /usr/local/bin/scl_enable && \
     npm install -g gitbook-cli
+
+# setup java jars for groovy support
+RUN mkdir $HOME/scripts
+ADD ./assets/lcl-java-helpers.sh $HOME/scripts/
+RUN $HOME/scripts/lcl-java-helpers.sh groovy-jars $HOME
+ADD ./assets/.groovyrc $HOME/
 
 # set perms
 RUN chown -R 1001:0 $HOME && \

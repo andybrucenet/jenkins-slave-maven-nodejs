@@ -1,0 +1,14 @@
+########################################################################
+# .groovyrc, ABr
+# Groovy initialization
+
+# auto-load jars
+NEW_CLASSPATH=''
+for i in $(find $HOME/.groovy/lib -name '*.jar') ; do
+  [ x"$NEW_CLASSPATH" != x ] && NEW_CLASSPATH="$NEW_CLASSPATH:"
+  NEW_CLASSPATH="${NEW_CLASSPATH}$i"
+done
+[ x"$CLASSPATH" != x ] && CLASSPATH=":$CLASSPATH"
+CLASSPATH="$NEW_CLASSPATH$CLASSPATH"
+export CLASSPATH
+
