@@ -12,7 +12,9 @@ ENV MAVEN_VERSION=3.3 \
     PATH=$HOME/node_modules/.bin:$HOME/.npm-global/bin:$PATH:/opt/gradle-3.5/bin \
     BASH_ENV=/usr/local/bin/scl_enable \
     ENV=/usr/local/bin/scl_enable \
-    PROMPT_COMMAND=". /usr/local/bin/scl_enable"
+    PROMPT_COMMAND=". /usr/local/bin/scl_enable" \
+    FEDRAMP_TEMPLATER_IMAGE="github.com/andybrucenet/fedramp-templater" \
+    GO_PATH="/usr/local/go"
 
 # Install NodeJS
 RUN yum install -y centos-release-scl-rh && \
@@ -57,6 +59,18 @@ RUN mkdir $HOME/scripts
 ADD ./assets/lcl-java-helpers.sh $HOME/scripts/
 RUN $HOME/scripts/lcl-java-helpers.sh groovy-jars $HOME
 ADD ./assets/.groovyrc $HOME/
+
+# install golang and fedramp-templater
+RUN yum install -y libxml2-devel && \
+    curl https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz | tar xz -C /usr/local && \
+    mkdir -p /etc/profile.d && \
+    echo 'pathmunge /usr/local/go/bin' > /etc/profile.d/golang-env.sh && \
+    echo 'pathmunge /usr/local/bin' >> /etc/profile.d/golang-env.sh && \
+    chmod +x /etc/profile.d/golang-env.sh && \
+    export PATH="$PATH:$GO_PATH/bin" && \
+    go get github.com/jbowtie/gokogiri && \
+    go get $FEDRAMP_TEMPLATER_IMAGE && \
+    cp $(find / -name fedramp-templater -type f | head -n 1) /usr/local/bin/
 
 # set perms
 RUN chown -R 1001:0 $HOME && \
