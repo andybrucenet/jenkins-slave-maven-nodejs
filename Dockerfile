@@ -13,7 +13,7 @@ ENV MAVEN_VERSION=3.3 \
     BASH_ENV=/usr/local/bin/scl_enable \
     ENV=/usr/local/bin/scl_enable \
     PROMPT_COMMAND=". /usr/local/bin/scl_enable" \
-    FEDRAMP_TEMPLATER_IMAGE="github.com/andybrucenet/fedramp-templater" \
+    FEDRAMP_TEMPLATER_IMAGE="github.com/opencontrol/fedramp-templater" \
     GO_PATH="/usr/local/go"
 
 # Install NodeJS
@@ -40,7 +40,8 @@ RUN INSTALL_PKGS="java-1.8.0-openjdk-devel rh-maven33*" && \
     mkdir -p $HOME/.gradle
 
 # install calibre
-RUN curl -q -k https://download.calibre-ebook.com/linux-installer.py | python -c "import sys; main=lambda:sys.stderr.write('Download failed\n'); exec(sys.stdin.read()); main()"
+RUN yum install -y mesa-libGL && \
+    curl -q -k https://download.calibre-ebook.com/linux-installer.py | python -c "import sys; main=lambda:sys.stderr.write('Download failed\n'); exec(sys.stdin.read()); main()"
 
 # When bash is started non-interactively, to run a shell script, for example it
 # looks for this variable and source the content of this file. This will enable
@@ -50,9 +51,9 @@ ADD ./contrib/bin/configure-slave /usr/local/bin/configure-slave
 ADD ./contrib/settings.xml $HOME/.m2/
 ADD ./contrib/init.gradle $HOME/.gradle/
 
-# install gitbook after all else
+# install gitbook / docxtemplater after all else
 RUN source /usr/local/bin/scl_enable && \
-    npm install -g gitbook-cli
+    npm install -g gitbook-cli docxtemplater
 
 # setup java jars for groovy support
 RUN mkdir $HOME/scripts
